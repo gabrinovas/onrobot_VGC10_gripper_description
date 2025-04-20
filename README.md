@@ -2,7 +2,7 @@
 
 [![support level: community](https://img.shields.io/badge/support%20level-community-lightgray.svg)](https://rosindustrial.org/news/2016/10/7/better-supporting-a-growing-ros-industrial-software-platform)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![repo size](https://img.shields.io/github/repo-size/Osaka-University-Harada-Laboratory/onrobot)
+![repo size](https://img.shields.io/github/repo-size/UOsaka-Harada-Laboratory/onrobot)
 
 ROS drivers for OnRobot Grippers.
 This repository was inspired by [ros-industrial/robotiq](https://github.com/ros-industrial/robotiq).
@@ -22,7 +22,7 @@ This repository was inspired by [ros-industrial/robotiq](https://github.com/ros-
 ## Installation
 
 ```bash
-cd catkin_ws/src && git clone https://github.com/takuya-ki/onrobot.git --depth 1 && git clone https://github.com/roboticsgroup/roboticsgroup_upatras_gazebo_plugins.git --depth 1 && cd ../ && sudo rosdep install --from-paths ./src --ignore-packages-from-source --rosdistro noetic -y --os=ubuntu:focal -y && sudo apt install ros-noetic-ros-control ros-noetic-ros-controllers && catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3
+cd catkin_ws/src && git clone https://github.com/UOsaka-Harada-Laboratory/onrobot.git --depth 1 && git clone https://github.com/roboticsgroup/roboticsgroup_upatras_gazebo_plugins.git --depth 1 && cd ../ && sudo rosdep install --from-paths ./src --ignore-packages-from-source --rosdistro noetic -y --os=ubuntu:focal -y && sudo apt install ros-noetic-ros-control ros-noetic-ros-controllers && catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3
 ```
 
 ## Usage
