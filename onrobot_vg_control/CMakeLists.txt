@@ -1,40 +1,34 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(onrobot_vg_control)
-find_package(catkin REQUIRED COMPONENTS
-  rospy
-  onrobot_vg_modbus_tcp
-  message_generation
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/OnRobotVGInput.msg"
+  "msg/OnRobotVGOutput.msg"
+  "srv/SetCommand.srv"
+  DEPENDENCIES std_msgs
 )
 
-add_message_files(
-  FILES
-  OnRobotVGInput.msg
-  OnRobotVGOutput.msg
-) 
+# Install Python package
+ament_python_install_package(${PROJECT_NAME})
 
-add_service_files(
-  FILES
-  SetCommand.srv
+# Install launch files
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
-catkin_python_setup()
+ament_export_dependencies(rclpy rosidl_default_runtime)
 
-generate_messages(
-  DEPENDENCIES
-)
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
-catkin_package(
-  LIBRARIES ${PROJECT_NAME}
-  DEPENDS
-  CATKIN_DEPENDS
-  rospy
-  onrobot_vg_modbus_tcp
-)
-
-catkin_install_python(
-  PROGRAMS
-  nodes/OnRobotVGSimpleController.py
-  nodes/OnRobotVGStatusListener.py
-  nodes/OnRobotVGTcpNode.py
-  nodes/OnRobotVGSimpleControllerServer.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+ament_package()

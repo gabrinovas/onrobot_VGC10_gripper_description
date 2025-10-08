@@ -4,10 +4,9 @@ Module comModbusTcp: defines a class which communicates with
 OnRobot Grippers using the Modbus/TCP protocol.
 """
 
-import sys
-import rospy
 import threading
 from pymodbus.client.sync import ModbusTcpClient
+import rclpy
 
 
 class communication:
@@ -31,6 +30,7 @@ class communication:
         self.client = None
         self.dummy = dummy
         self.lock = threading.Lock()
+        self.logger = rclpy.logging.get_logger('comModbusTcp')
 
     def connectToDevice(self, ip, port, changer_addr=65):
         """ Connects to the client device (gripper).
@@ -42,10 +42,7 @@ class communication:
         """
 
         if self.dummy:
-            rospy.loginfo(
-                rospy.get_name() +
-                ": " +
-                sys._getframe().f_code.co_name)
+            self.logger.info("Dummy mode: connectToDevice")
             return
 
         self.client = ModbusTcpClient(
@@ -58,18 +55,18 @@ class communication:
             timeout=1)
         self.changer_addr = changer_addr
         self.client.connect()
+        self.logger.info(f"Connected to {ip}:{port} with changer address {changer_addr}")
 
     def disconnectFromDevice(self):
         """ Closes connection. """
 
         if self.dummy:
-            rospy.loginfo(
-                rospy.get_name() +
-                ": " +
-                sys._getframe().f_code.co_name)
+            self.logger.info("Dummy mode: disconnectFromDevice")
             return
 
-        self.client.close()
+        if self.client:
+            self.client.close()
+            self.logger.info("Disconnected from device")
 
     def sendCommand(self, message):
         """ Sends a command to the Gripper.
@@ -79,17 +76,15 @@ class communication:
         """
 
         if self.dummy:
-            rospy.loginfo(
-                rospy.get_name() +
-                ": " +
-                sys._getframe().f_code.co_name)
+            self.logger.info("Dummy mode: sendCommand")
             return
 
         # Sending a command to the device (address 0 ~ 2)
-        if message != []:
+        if message != [] and self.client:
             with self.lock:
                 self.client.write_registers(
                     address=0, values=message, unit=self.changer_addr)
+            self.logger.debug(f"Sent command: {message}")
 
     def restartPowerCycle(self):
         """ Restarts the power cycle of Compute Box.
@@ -102,26 +97,39 @@ class communication:
         message = 2
         restart_address = 63
 
+        if self.dummy:
+            self.logger.info("Dummy mode: restartPowerCycle")
+            return
+
         # Sending 2 to address 0x0 resets compute box (address 63) power cycle
-        with self.lock:
-            self.client.write_registers(
-                address=0, values=message, unit=restart_address)
+        if self.client:
+            with self.lock:
+                self.client.write_registers(
+                    address=0, values=message, unit=restart_address)
+            self.logger.info("Restarted power cycle")
 
     def getStatus(self):
         """ Sends a request to read and returns the gripper status. """
 
         response = [0] * 18
         if self.dummy:
-            rospy.loginfo(
-                rospy.get_name() +
-                ": " +
-                sys._getframe().f_code.co_name)
+            self.logger.info("Dummy mode: getStatus")
+            return response
+
+        if not self.client:
+            self.logger.warning("Not connected to device")
             return response
 
         # Getting status from the device (address 258 ~ 275)
-        with self.lock:
-            response = self.client.read_holding_registers(
-                address=258, count=18, unit=self.changer_addr).registers
+        try:
+            with self.lock:
+                result = self.client.read_holding_registers(
+                    address=258, count=18, unit=self.changer_addr)
+                if not result.isError():
+                    response = result.registers
+                else:
+                    self.logger.error(f"Modbus error: {result}")
+        except Exception as e:
+            self.logger.error(f"Error reading status: {e}")
 
-        # Output the result
         return response

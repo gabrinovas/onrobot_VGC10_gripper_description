@@ -1,15 +1,23 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypeset="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>onrobot_vg_control</name>
   <version>1.0.0</version>
-  <description>Package to control an OnRobot VG gripper</description>
+  <description>Package to control OnRobot VG10 and VGC10 vacuum grippers</description>
   <maintainer email="kiyokawa@hlab.sys.es.osaka-u.ac.jp">Takuya Kiyokawa</maintainer>
   <author email="kiyokawa@hlab.sys.es.osaka-u.ac.jp">Takuya Kiyokawa</author>
   <license>MIT</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <depend>rospy</depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclpy</depend>
   <depend>onrobot_vg_modbus_tcp</depend>
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

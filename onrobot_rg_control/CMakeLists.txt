@@ -1,45 +1,40 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(onrobot_rg_control)
-find_package(catkin REQUIRED COMPONENTS
-  rospy
-  std_srvs
-  onrobot_rg_modbus_tcp
-  message_generation
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/OnRobotRGInput.msg"
+  "msg/OnRobotRGOutput.msg"
+  "srv/SetCommand.srv"
+  DEPENDENCIES std_msgs
 )
 
-add_message_files(
-  FILES
-  OnRobotRGInput.msg
-  OnRobotRGOutput.msg
-) 
+# Install Python package
+ament_python_install_package(${PROJECT_NAME})
 
-add_service_files(
-  FILES
-  SetCommand.srv
+# Install launch files
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
-catkin_python_setup()
-
-generate_messages(
-  DEPENDENCIES
-  std_srvs
+# Install config files
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
 )
 
-catkin_package(
-  LIBRARIES ${PROJECT_NAME}
-  DEPENDS
-  CATKIN_DEPENDS
-  rospy
-  onrobot_rg_modbus_tcp
-)
+ament_export_dependencies(rclpy std_srvs rosidl_default_runtime)
 
-catkin_install_python(
-  PROGRAMS
-  nodes/OnRobotRGSimpleController.py
-  nodes/OnRobotRGStatusListener.py
-  nodes/OnRobotRGTcpNode.py
-  nodes/OnRobotRGSimpleControllerServer.py
-  nodes/DualChanger/OnRobotRGTcpDualNode.py 
-  nodes/DualChanger/OnRobotRGStatusDualListener.py
-  nodes/DualChanger/OnRobotRGDualServer.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()

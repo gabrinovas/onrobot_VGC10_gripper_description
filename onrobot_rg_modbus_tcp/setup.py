@@ -1,13 +1,28 @@
-## ! DO NOT MANUALLY INVOKE THIS setup.py, USE CATKIN INSTEAD
-
 from setuptools import setup
-from catkin_pkg.python_setup import generate_distutils_setup
+import os
+from glob import glob
 
-# fetch values from package.xml
-setup_args = generate_distutils_setup(
-    packages=['onrobot_rg_modbus_tcp'],
-    package_dir={'': 'src'},
-    requires=['rospy', 'pymodbus==2.5.3'],
+package_name = 'onrobot_rg_modbus_tcp'
+
+setup(
+    name=package_name,
+    version='1.0.0',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=['setuptools', 'pymodbus==2.5.3'],
+    zip_safe=True,
+    maintainer='Takuya Kiyokawa',
+    maintainer_email='kiyokawa@hlab.sys.es.osaka-u.ac.jp',
+    description='Modbus/TCP communication for OnRobot RG grippers',
+    license='MIT',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            # No executable nodes in this package - it's a library
+        ],
+    },
 )
-
-setup(**setup_args)
