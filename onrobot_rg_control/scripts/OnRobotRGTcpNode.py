@@ -4,8 +4,8 @@ import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Trigger
 from onrobot_rg_control.msg import OnRobotRGInput, OnRobotRGOutput
-import onrobot_rg_control.baseOnRobotRG
-import onrobot_rg_modbus_tcp.comModbusTcp
+from onrobot_rg_control.baseOnRobotRG import onrobotbaseRG
+from onrobot_rg_modbus_tcp.comModbusTcp import communication
 
 
 class OnRobotRGTcp(Node):
@@ -16,18 +16,18 @@ class OnRobotRGTcp(Node):
         self.declare_parameter('ip', '192.168.1.1')
         self.declare_parameter('port', '502')
         self.declare_parameter('gripper', 'rg6')
-        self.declare_parameter('changer_addr', '65')
+        self.declare_parameter('changer_addr', 65)
         self.declare_parameter('dummy', False)
         
-        ip = self.get_parameter('ip').value
-        port = self.get_parameter('port').value
-        gtype = self.get_parameter('gripper').value
-        changer_addr = self.get_parameter('changer_addr').value
-        dummy = self.get_parameter('dummy').value
+        ip = self.get_parameter('ip').get_parameter_value().string_value
+        port = self.get_parameter('port').get_parameter_value().integer_value
+        gtype = self.get_parameter('gripper').get_parameter_value().string_value
+        changer_addr = self.get_parameter('changer_addr').get_parameter_value().integer_value
+        dummy = self.get_parameter('dummy').get_parameter_value().bool_value
 
         # Gripper is a RG gripper with a Modbus/TCP connection
-        self.gripper = onrobot_rg_control.baseOnRobotRG.onrobotbaseRG(gtype)
-        self.gripper.client = onrobot_rg_modbus_tcp.comModbusTcp.communication(dummy)
+        self.gripper = onrobotbaseRG(gtype)
+        self.gripper.client = communication(dummy)
 
         # Connecting to the ip address
         self.gripper.client.connectToDevice(ip, port, changer_addr)
@@ -45,7 +45,7 @@ class OnRobotRGTcp(Node):
         # The restarting service
         self.srv = self.create_service(
             Trigger,
-            "/onrobot_rg/restart_power",
+            "onrobot_rg/restart_power",
             self.restartPowerCycle)
 
         self.timer = self.create_timer(0.05, self.mainLoop)

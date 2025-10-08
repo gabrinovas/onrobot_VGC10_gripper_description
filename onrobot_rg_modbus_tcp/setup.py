@@ -13,7 +13,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools', 'pymodbus==2.5.3'],
+    install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Takuya Kiyokawa',
     maintainer_email='kiyokawa@hlab.sys.es.osaka-u.ac.jp',

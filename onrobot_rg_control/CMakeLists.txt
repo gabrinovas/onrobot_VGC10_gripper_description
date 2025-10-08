@@ -6,15 +6,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/OnRobotRGInput.msg"
   "msg/OnRobotRGOutput.msg"
   "srv/SetCommand.srv"
-  DEPENDENCIES std_msgs
+)
+
+# Install Python modules
+install(PROGRAMS
+  scripts/OnRobotRGSimpleController
+  scripts/OnRobotRGStatusListener
+  scripts/OnRobotRGTcpNode
+  scripts/OnRobotRGSimpleControllerServer
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install Python package
@@ -29,8 +39,6 @@ install(DIRECTORY launch
 install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
 )
-
-ament_export_dependencies(rclpy std_srvs rosidl_default_runtime)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

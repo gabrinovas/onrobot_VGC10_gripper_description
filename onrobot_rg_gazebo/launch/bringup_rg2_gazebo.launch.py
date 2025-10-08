@@ -57,7 +57,8 @@ def generate_launch_description():
                         FindPackageShare('onrobot_rg_description'),
                         'urdf/onrobot_rg2_model.xacro'
                     ])
-                ])
+                ]),
+                'use_sim_time': True
             }]
         ),
         
@@ -80,7 +81,6 @@ def generate_launch_description():
             executable='spawner',
             name='controller_spawner',
             output='screen',
-            namespace='/onrobot_rg2',
             arguments=['joint_state_controller', 'joint_position_controller'],
             parameters=[{
                 'use_sim_time': True

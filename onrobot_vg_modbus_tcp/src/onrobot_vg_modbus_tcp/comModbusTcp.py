@@ -5,7 +5,7 @@ OnRobot VG grippers using the Modbus/TCP protocol.
 """
 
 import threading
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 import rclpy
 
 
@@ -13,7 +13,7 @@ class communication:
     """ communication sends commands and receives the status of VG gripper.
 
         Attributes:
-            client (pymodbus.client.sync.ModbusTcpClient):
+            client (pymodbus.client.ModbusTcpClient):
                 instance of ModbusTcpClient to establish modbus connection
             dummy (book): the process will be dummy mode (True) or not
             lock (threading.Lock):
@@ -36,7 +36,7 @@ class communication:
 
             Args:
                 ip (str): IP address (e.g. '192.168.1.1')
-                port (str): port number (e.g. '502')
+                port (int): port number (e.g. 502)
                 changer_addr (int): quick tool changer address
         """
 
@@ -45,16 +45,15 @@ class communication:
             return
 
         self.client = ModbusTcpClient(
-            ip,
+            host=ip,
             port=port,
-            stopbits=1,
-            bytesize=8,
-            parity='E',
-            baudrate=115200,
             timeout=1)
         self.changer_addr = changer_addr
         self.client.connect()
-        self.logger.info(f"Connected to VG gripper at {ip}:{port} with changer address {changer_addr}")
+        if self.client.connected:
+            self.logger.info(f"Connected to VG gripper at {ip}:{port} with changer address {changer_addr}")
+        else:
+            self.logger.error(f"Failed to connect to VG gripper at {ip}:{port}")
 
     def disconnectFromDevice(self):
         """ Closes connection. """
@@ -80,7 +79,7 @@ class communication:
 
         # Sending a command to the device (address 0 ~ 1)
         # VG gripper uses combined registers: [rMCA + rVCA, rMCB + rVCB]
-        if message != [] and self.client and len(message) == 4:
+        if message != [] and self.client and self.client.connected and len(message) == 4:
             try:
                 # Combine mode and vacuum values for each channel
                 command_a = message[0] + message[1]  # rMCA + rVCA
@@ -89,13 +88,15 @@ class communication:
                 command = [command_a, command_b]
                 
                 with self.lock:
-                    self.client.write_registers(
-                        address=0, values=command, unit=self.changer_addr)
-                self.logger.debug(f"Sent VG command: {command} (original: {message})")
+                    result = self.client.write_registers(
+                        address=0, values=command, slave=self.changer_addr)
+                    if result.isError():
+                        self.logger.error(f"Modbus write error: {result}")
             except Exception as e:
                 self.logger.error(f"Error sending VG command: {e}")
+            self.logger.debug(f"Sent VG command: {command} (original: {message})")
         else:
-            self.logger.warn(f"Invalid VG command message: {message}")
+            self.logger.warn(f"Invalid VG command message or not connected: {message}")
 
     def getStatus(self):
         """ Sends a request to read and returns the VG gripper status.
@@ -110,7 +111,7 @@ class communication:
             # Return realistic dummy values for testing
             return [850, 0]  # Channel A has good vacuum, Channel B unused
 
-        if not self.client:
+        if not self.client or not self.client.connected:
             self.logger.warning("Not connected to VG gripper")
             return response
 
@@ -118,7 +119,7 @@ class communication:
         try:
             with self.lock:
                 result = self.client.read_holding_registers(
-                    address=258, count=2, unit=self.changer_addr)
+                    address=258, count=2, slave=self.changer_addr)
                 if not result.isError():
                     response = result.registers
                     self.logger.debug(f"Received VG status: {response}")

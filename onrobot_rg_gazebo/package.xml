@@ -11,6 +11,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>gazebo_ros_pkgs</exec_depend>
   <exec_depend>onrobot_rg_description</exec_depend>
   <exec_depend>onrobot_rg_control</exec_depend>
   <exec_depend>controller_manager</exec_depend>

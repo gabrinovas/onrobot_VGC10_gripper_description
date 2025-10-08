@@ -5,7 +5,7 @@ OnRobot Grippers using the Modbus/TCP protocol.
 """
 
 import threading
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient
 import rclpy
 
 
@@ -13,7 +13,7 @@ class communication:
     """ communication sends commands and receives the status of RG gripper.
 
         Attributes:
-            client (pymodbus.client.sync.ModbusTcpClient):
+            client (pymodbus.client.ModbusTcpClient):
                 instance of ModbusTcpClient to establish modbus connection
             dummy (book): the process will be dummy mode (True) or not
             lock (threading.Lock):
@@ -37,7 +37,7 @@ class communication:
 
             Args:
                 ip (str): IP address (e.g. '192.168.1.1')
-                port (str): port number (e.g. '502')
+                port (int): port number (e.g. 502)
                 changer_addr (int): quick tool changer address
         """
 
@@ -46,16 +46,15 @@ class communication:
             return
 
         self.client = ModbusTcpClient(
-            ip,
+            host=ip,
             port=port,
-            stopbits=1,
-            bytesize=8,
-            parity='E',
-            baudrate=115200,
             timeout=1)
         self.changer_addr = changer_addr
         self.client.connect()
-        self.logger.info(f"Connected to {ip}:{port} with changer address {changer_addr}")
+        if self.client.connected:
+            self.logger.info(f"Connected to {ip}:{port} with changer address {changer_addr}")
+        else:
+            self.logger.error(f"Failed to connect to {ip}:{port}")
 
     def disconnectFromDevice(self):
         """ Closes connection. """
@@ -80,10 +79,15 @@ class communication:
             return
 
         # Sending a command to the device (address 0 ~ 2)
-        if message != [] and self.client:
-            with self.lock:
-                self.client.write_registers(
-                    address=0, values=message, unit=self.changer_addr)
+        if message != [] and self.client and self.client.connected:
+            try:
+                with self.lock:
+                    result = self.client.write_registers(
+                        address=0, values=message, slave=self.changer_addr)
+                    if result.isError():
+                        self.logger.error(f"Modbus write error: {result}")
+            except Exception as e:
+                self.logger.error(f"Error sending command: {e}")
             self.logger.debug(f"Sent command: {message}")
 
     def restartPowerCycle(self):
@@ -102,11 +106,14 @@ class communication:
             return
 
         # Sending 2 to address 0x0 resets compute box (address 63) power cycle
-        if self.client:
+        if self.client and self.client.connected:
             with self.lock:
-                self.client.write_registers(
-                    address=0, values=message, unit=restart_address)
-            self.logger.info("Restarted power cycle")
+                result = self.client.write_registers(
+                    address=0, values=[message], slave=restart_address)
+                if not result.isError():
+                    self.logger.info("Restarted power cycle")
+                else:
+                    self.logger.error(f"Failed to restart power cycle: {result}")
 
     def getStatus(self):
         """ Sends a request to read and returns the gripper status. """
@@ -116,7 +123,7 @@ class communication:
             self.logger.info("Dummy mode: getStatus")
             return response
 
-        if not self.client:
+        if not self.client or not self.client.connected:
             self.logger.warning("Not connected to device")
             return response
 
@@ -124,7 +131,7 @@ class communication:
         try:
             with self.lock:
                 result = self.client.read_holding_registers(
-                    address=258, count=18, unit=self.changer_addr)
+                    address=258, count=18, slave=self.changer_addr)
                 if not result.isError():
                     response = result.registers
                 else:
